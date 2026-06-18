@@ -1,0 +1,21 @@
+# =============================================================================
+# Local development profile: activate with -Dspring.profiles.active=local
+# Connects to Docker Compose services via localhost ports.
+# =============================================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/aptdb
+    username: ${POSTGRES_USER:aptuser}
+    password: ${POSTGRES_PASSWORD:changeme}
+
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_USER:aptuser}:${MONGO_PASSWORD:changeme}@localhost:27017/aptdb?authSource=admin
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:changeme}
+
+  kafka:
+    bootstrap-servers: localhost:9092

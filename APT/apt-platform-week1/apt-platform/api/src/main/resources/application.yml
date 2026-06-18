@@ -1,0 +1,127 @@
+# =============================================================================
+# APT Detection Platform — Application Configuration
+#
+# Spring loads this file first, then overlays the active profile:
+#   application-local.yml  — your laptop, services on localhost
+#   application-docker.yml — inside Docker Compose, services by container name
+#   application-test.yml   — integration tests with Testcontainers
+#
+# Sensitive values use environment variables (${VAR_NAME}) so they are
+# never committed to source control.
+# =============================================================================
+
+spring:
+  application:
+    name: apt-detection-platform
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate      # Flyway manages schema — Hibernate only validates
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  # ── Flyway — automatic DB migrations ────────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ── MongoDB ─────────────────────────────────────────────────────────────────
+  data:
+    mongodb:
+      database: aptdb
+      auto-index-creation: false   # Indexes created by mongo-init.js
+
+    # ── Redis ──────────────────────────────────────────────────────────────────
+    redis:
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+
+  # ── Kafka ───────────────────────────────────────────────────────────────────
+  kafka:
+    consumer:
+      group-id: apt-detection-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.apt.core.model"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  # ── WebSocket ───────────────────────────────────────────────────────────────
+  websocket:
+    message-size-limit: 65536
+
+# ── Spring Actuator — health check endpoints ────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    redis:
+      enabled: true
+    mongo:
+      enabled: true
+
+# ── JWT Configuration ────────────────────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET}             # Must be at least 256 bits (32 chars)
+    expiration-ms: 86400000           # 24 hours in milliseconds
+    refresh-expiration-ms: 604800000  # 7 days
+
+  # ── Kafka Topics ──────────────────────────────────────────────────────────
+  kafka:
+    topics:
+      network-traffic: network_traffic
+      endpoint-logs: endpoint_logs
+      anomalies: anomalies
+    simulation:
+      events-per-second: 10    # How fast the log simulator fires events
+      apt-injection-rate: 0.05 # 5% of events will be APT-pattern events
+
+  # ── Detection Thresholds ──────────────────────────────────────────────────
+  detection:
+    gaussian-epsilon: 0.001     # P(x) threshold — flag if below this
+    autoencoder-threshold: 0.15 # Reconstruction error threshold
+    three-sigma-multiplier: 3.0
+    risk-score:
+      auto-response-threshold: 90   # Trigger automated response
+      email-alert-threshold: 75     # Send email notification
+      isolation-forest-weight: 0.4
+      autoencoder-weight: 0.4
+      peer-deviation-weight: 0.2
+
+# ── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.apt: DEBUG
+    org.springframework.security: INFO
+    org.apache.kafka: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
