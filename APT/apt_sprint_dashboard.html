@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APT Detection Platform — 4-Week Sprint Guide</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1e2d45;
+    --accent: #00c6ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --w1: #00c6ff;
+    --w2: #7c3aed;
+    --w3: #10b981;
+    --w4: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0b0f1a 0%, #0d1b2e 50%, #0b0f1a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .header-icon { font-size: 2rem; }
+  .header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+  .header p { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+  .badge {
+    margin-left: auto; background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+  }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 85px); }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky; top: 0; height: calc(100vh - 85px); overflow-y: auto;
+  }
+  .sidebar-label { font-size: 0.65rem; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 20px 8px; margin-top: 16px; }
+  .week-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 20px; background: none; border: none;
+    color: var(--muted); font-size: 0.85rem; cursor: pointer; text-align: left;
+    border-left: 3px solid transparent; transition: all 0.15s;
+  }
+  .week-btn:hover { background: var(--surface2); color: var(--text); }
+  .week-btn.active { color: var(--text); border-left-color: var(--accent); background: rgba(0,198,255,0.06); }
+  .week-btn.active.w1 { border-left-color: var(--w1); }
+  .week-btn.active.w2 { border-left-color: var(--w2); }
+  .week-btn.active.w3 { border-left-color: var(--w3); }
+  .week-btn.active.w4 { border-left-color: var(--w4); }
+  .week-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .nav-sub {
+    padding: 6px 20px 6px 43px; font-size: 0.78rem; color: var(--muted);
+    cursor: pointer; background: none; border: none; width: 100%; text-align: left;
+    border-left: 3px solid transparent; transition: all 0.15s;
+  }
+  .nav-sub:hover { color: var(--text); background: var(--surface2); }
+  .progress-bar { height: 3px; border-radius: 2px; margin: 4px 20px; background: var(--border); }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+  /* Main */
+  .main { padding: 28px 32px; overflow-y: auto; }
+
+  /* Architecture Banner */
+  .arch-banner {
+    background: linear-gradient(135deg, var(--surface2), #0d1b2e);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .arch-pill {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 0.75rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .arch-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .arch-arrow { color: var(--muted); font-size: 0.9rem; }
+
+  /* Week Panel */
+  .week-panel { display: none; }
+  .week-panel.active { display: block; }
+
+  .week-header {
+    display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;
+  }
+  .week-num {
+    font-size: 3rem; font-weight: 900; line-height: 1;
+    -webkit-text-stroke: 2px; color: transparent;
+  }
+  .week-num.w1 { -webkit-text-stroke-color: var(--w1); }
+  .week-num.w2 { -webkit-text-stroke-color: var(--w2); }
+  .week-num.w3 { -webkit-text-stroke-color: var(--w3); }
+  .week-num.w4 { -webkit-text-stroke-color: var(--w4); }
+  .week-title h2 { font-size: 1.3rem; font-weight: 700; }
+  .week-title .goal { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .week-deliverable {
+    background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 20px;
+    font-size: 0.82rem; display: flex; align-items: flex-start; gap: 8px;
+  }
+
+  /* Cards Grid */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s;
+  }
+  .task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .task-card.done { border-color: var(--green); background: rgba(16,185,129,0.05); }
+  .task-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .task-check {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; flex-shrink: 0; transition: all 0.2s;
+  }
+  .task-card.done .task-check { background: var(--green); border-color: var(--green); color: white; }
+  .task-id { font-size: 0.65rem; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
+  .task-name { font-size: 0.88rem; font-weight: 600; }
+  .task-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+  .task-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .tag {
+    font-size: 0.65rem; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+    background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+  }
+  .tag.java { border-color: #f97316; color: #f97316; }
+  .tag.kafka { border-color: #8b5cf6; color: #8b5cf6; }
+  .tag.ml { border-color: var(--accent); color: var(--accent); }
+  .tag.db { border-color: var(--green); color: var(--green); }
+  .tag.security { border-color: var(--red); color: var(--red); }
+  .tag.frontend { border-color: #ec4899; color: #ec4899; }
+  .tag.devops { border-color: var(--yellow); color: var(--yellow); }
+
+  /* Code Snippets */
+  .code-section { margin-bottom: 24px; }
+  .code-section h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+  .code-block {
+    background: #060c16; border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.76rem; line-height: 1.6; color: #a8d9ff; overflow-x: auto;
+    white-space: pre; position: relative;
+  }
+  .code-label {
+    position: absolute; top: 8px; right: 8px; font-size: 0.6rem; font-weight: 700;
+    color: var(--muted); background: var(--surface); padding: 2px 6px; border-radius: 4px;
+    font-family: system-ui;
+  }
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .comm { color: #546e7a; }
+  .num { color: #f78c6c; }
+  .ann { color: #ffcb6b; }
+  .cls { color: #82aaff; }
+
+  /* Schema */
+  .schema-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .schema-table {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .schema-title {
+    background: var(--surface2); padding: 8px 12px;
+    font-size: 0.78rem; font-weight: 700; border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .schema-row { display: flex; padding: 5px 12px; font-size: 0.72rem; border-bottom: 1px solid var(--border); gap: 8px; }
+  .schema-row:last-child { border: none; }
+  .schema-col { color: var(--text); flex: 1; }
+  .schema-type { color: #f78c6c; font-family: monospace; font-size: 0.68rem; }
+  .schema-pk { color: var(--yellow); font-size: 0.6rem; font-weight: 700; }
+
+  /* FR Matrix */
+  .fr-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.78rem; }
+  .fr-table th { text-align: left; padding: 8px 12px; background: var(--surface2); color: var(--muted); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+  .fr-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .fr-table tr:hover td { background: var(--surface2); }
+  .fr-id { font-family: monospace; color: var(--accent); font-weight: 700; }
+
+  /* Stats row */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; flex: 1; min-width: 120px;
+  }
+  .stat-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .tl-item { position: relative; margin-bottom: 20px; }
+  .tl-dot {
+    position: absolute; left: -20px; top: 3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .tl-item h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+  .tl-item p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  /* Overview tab */
+  .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .nfr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .nfr-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+  }
+  .nfr-icon { font-size: 1.2rem; margin-bottom: 6px; }
+  .nfr-name { font-size: 0.75rem; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+  .nfr-val { font-size: 0.72rem; color: var(--muted); }
+
+  /* Stack section */
+  .stack-layer {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 12px;
+  }
+  .stack-layer-title { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stack-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stack-pill {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; font-size: 0.72rem;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .stack-pill .icon { font-size: 0.9rem; }
+
+  /* Checklist */
+  .checklist { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px; font-size: 0.72rem;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+  }
+  .chip.done { background: rgba(16,185,129,0.1); border-color: var(--green); color: var(--green); }
+
+  /* Progress overall */
+  .overall-progress {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 20px;
+  }
+  .op-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .op-title { font-size: 0.85rem; font-weight: 600; }
+  .op-pct { font-size: 1.1rem; font-weight: 800; color: var(--green); }
+  .op-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .op-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 4px; transition: width 0.5s; }
+  .op-weeks { display: flex; gap: 4px; margin-top: 8px; }
+  .op-week { flex: 1; height: 4px; border-radius: 2px; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .overview-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🛡️</div>
+  <div>
+    <h1>Java APT Detection & Response Platform</h1>
+    <p>4-Week Accelerated Sprint Guide · Portfolio-Grade · Based on 6-Month SDLC Plan</p>
+  </div>
+  <div class="badge">⚡ 1-Month Build</div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Overview</div>
+    <button class="week-btn active" onclick="showPanel('overview')">
+      <span class="week-dot" style="background:#64748b"></span> Project Overview
+    </button>
+    <button class="week-btn" onclick="showPanel('fr')">
+      <span class="week-dot" style="background:#94a3b8"></span> Requirements Matrix
+    </button>
+
+    <div class="sidebar-label">Sprint Weeks</div>
+    <button class="week-btn w1" id="nav-w1" onclick="showPanel('w1')">
+      <span class="week-dot" style="background:var(--w1)"></span> Week 1 · Architecture & Pipeline
+    </button>
+    <div class="progress-bar"><div class="progress-fill" id="prog1" style="background:var(--w1);width:0%"></div></div>
+
+    <button class="week-btn w2" id="nav-w2" onclick="showPanel('w2')">
+      <span class="week-dot" style="background:var(--w2)"></span> Week 2 · ML Detection Engine
+    </button>
+    <div class="progress-bar"><div class="progress-fill" id="prog2" style="background:var(--w2);width:0%"></div></div>
+
+    <button class="week-btn w3" id="nav-w3" onclick="showPanel('w3')">
+      <span class="week-dot" style="background:var(--w3)"></span> Week 3 · API, Dashboard & Response
+    </button>
+    <div class="progress-bar"><div class="progress-fill" id="prog3" style="background:var(--w3);width:0%"></div></div>
+
+    <button class="week-btn w4" id="nav-w4" onclick="showPanel('w4')">
+      <span class="week-dot" style="background:var(--w4)"></span> Week 4 · Testing & Deployment
+    </button>
+    <div class="progress-bar"><div class="progress-fill" id="prog4" style="background:var(--w4);width:0%"></div></div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- OVERVIEW PANEL -->
+    <div class="week-panel active" id="panel-overview">
+      <div class="overall-progress">
+        <div class="op-header">
+          <div class="op-title">🎯 Overall Sprint Progress</div>
+          <div class="op-pct" id="total-pct">0%</div>
+        </div>
+        <div class="op-bar"><div class="op-fill" id="total-bar" style="width:0%"></div></div>
+        <div class="op-weeks">
+          <div class="op-week" style="background:var(--w1)" id="wbar1"></div>
+          <div class="op-week" style="background:var(--w2)" id="wbar2"></div>
+          <div class="op-week" style="background:var(--w3)" id="wbar3"></div>
+          <div class="op-week" style="background:var(--w4)" id="wbar4"></div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--accent)">7</div>
+          <div class="stat-label">Functional Modules</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--w2)">4</div>
+          <div class="stat-label">Sprint Weeks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--green)">24</div>
+          <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--yellow)">Java 21</div>
+          <div class="stat-label">Base Language</div>
+        </div>
+      </div>
+
+      <div class="overview-grid">
+        <div>
+          <h3 style="font-size:0.85rem;margin-bottom:12px;color:var(--accent)">🏗️ Tech Stack</h3>
+          <div class="stack-layer">
+            <div class="stack-layer-title">Backend (Java)</div>
+            <div class="stack-pills">
+              <div class="stack-pill"><span class="icon">☕</span> Java 21 + Project Loom</div>
+              <div class="stack-pill"><span class="icon">🌱</span> Spring Boot 3.x</div>
+              <div class="stack-pill"><span class="icon">📨</span> Apache Kafka</div>
+              <div class="stack-pill"><span class="icon">🧠</span> Deeplearning4j (DL4J)</div>
+              <div class="stack-pill"><span class="icon">📊</span> Weka</div>
+              <div class="stack-pill"><span class="icon">📡</span> Pcap4j</div>
+            </div>
+          </div>
+          <div class="stack-layer">
+            <div class="stack-layer-title">Databases</div>
+            <div class="stack-pills">
+              <div class="stack-pill">🍃 MongoDB (raw logs)</div>
+              <div class="stack-pill">🐘 PostgreSQL (profiles/alerts)</div>
+              <div class="stack-pill">⚡ Redis (state/cache)</div>
+            </div>
+          </div>
+          <div class="stack-layer">
+            <div class="stack-layer-title">Frontend</div>
+            <div class="stack-pills">
+              <div class="stack-pill">⚛️ React.js</div>
+              <div class="stack-pill">📊 D3.js / Chart.js</div>
+              <div class="stack-pill">🔌 WebSockets</div>
+            </div>
+          </div>
+          <div class="stack-layer">
+            <div class="stack-layer-title">DevOps</div>
+            <div class="stack-pills">
+              <div class="stack-pill">🐳 Docker + Compose</div>
+              <div class="stack-pill">⚙️ GitHub Actions CI/CD</div>
+              <div class="stack-pill">🔍 SpotBugs SAST</div>
+              <div class="stack-pill">☸️ Kubernetes-ready</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-size:0.85rem;margin-bottom:12px;color:var(--accent)">📐 Non-Functional Requirements</h3>
+          <div class="nfr-grid">
+            <div class="nfr-card">
+              <div class="nfr-icon">⚡</div>
+              <div class="nfr-name">Throughput</div>
+              <div class="nfr-val">100 Mbps+ via Kafka stream buffering</div>
+            </div>
+            <div class="nfr-card">
+              <div class="nfr-icon">⏱️</div>
+              <div class="nfr-name">Latency</div>
+              <div class="nfr-val">&lt;1 second detection → dashboard alert</div>
+            </div>
+            <div class="nfr-card">
+              <div class="nfr-icon">🔐</div>
+              <div class="nfr-name">Security</div>
+              <div class="nfr-val">AES-256 at rest · TLS 1.3 · RBAC + MFA</div>
+            </div>
+            <div class="nfr-card">
+              <div class="nfr-icon">♻️</div>
+              <div class="nfr-name">Fault Tolerance</div>
+              <div class="nfr-val">Redis state persistence across restarts</div>
+            </div>
+            <div class="nfr-card">
+              <div class="nfr-icon">📈</div>
+              <div class="nfr-name">Scalability</div>
+              <div class="nfr-val">Dockerized, Kubernetes-ready horizontal scale</div>
+            </div>
+            <div class="nfr-card">
+              <div class="nfr-icon">🎯</div>
+              <div class="nfr-name">Accuracy</div>
+              <div class="nfr-val">60% false positive reduction vs legacy IDS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:0.85rem;margin-bottom:10px;color:var(--accent)">🗓️ Sprint Timeline</h3>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--w1)"></div>
+          <h4 style="color:var(--w1)">Week 1 — Architecture, Scaffold & Data Pipeline</h4>
+          <p>Spring Boot multi-module project · Docker Compose stack · Kafka producer/consumer · PostgreSQL schema · JWT RBAC auth</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--w2)"></div>
+          <h4 style="color:var(--w2)">Week 2 — ML Detection Engine & Behavioral Profiling</h4>
+          <p>UEBA Gaussian modeling · Isolation Forest + Autoencoder (DL4J) · Risk scoring engine (0–100) · MITRE ATT&CK mapping · PostgreSQL alert storage</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--w3)"></div>
+          <h4 style="color:var(--w3)">Week 3 — REST API, Real-Time Dashboard & Response Engine</h4>
+          <p>Full Spring Boot REST API · WebSocket alert streaming · React SOC dashboard with D3.js topology · Automated response engine · TOTP MFA</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--w4)"></div>
+          <h4 style="color:var(--w4)">Week 4 — Testing, Hardening, CI/CD & Deployment</h4>
+          <p>JUnit 5 + Testcontainers integration tests · SpotBugs SAST · GitHub Actions CI/CD · Docker production stack · Full documentation</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FR MATRIX PANEL -->
+    <div class="week-panel" id="panel-fr">
+      <h2 style="font-size:1.1rem;margin-bottom:16px">📋 Functional Requirements Matrix</h2>
+      <table class="fr-table">
+        <thead>
+          <tr><th>ID</th><th>Module</th><th>Technical Description</th><th>Week</th><th>Java Library</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="fr-id">FR-1</td><td>Multi-Source Ingestion</td><td>Ingest & normalize telemetry from simulated network logs (pcap/JSON), endpoint logs (sysmon-style), and STIX/TAXII threat intel feeds</td><td><span style="color:var(--w1)">W1</span></td><td>Pcap4j, Kafka</td></tr>
+          <tr><td class="fr-id">FR-2</td><td>Behavioral Profiling (UEBA)</td><td>Adaptive baselines per user/entity using temporal features; Gaussian distribution modeling (μ, σ²)</td><td><span style="color:var(--w2)">W2</span></td><td>Apache Commons Math</td></tr>
+          <tr><td class="fr-id">FR-3</td><td>Anomaly Detection Engine</td><td>Isolation Forest + Autoencoder in DL4J; flag deviations with reconstruction error > threshold</td><td><span style="color:var(--w2)">W2</span></td><td>Deeplearning4j, Weka</td></tr>
+          <tr><td class="fr-id">FR-4</td><td>MITRE ATT&CK Mapping</td><td>Auto-map anomalies to ATT&CK techniques (T1078, T1071, T1110 etc.) from STIX JSON dataset</td><td><span style="color:var(--w2)">W2</span></td><td>Jackson JSON</td></tr>
+          <tr><td class="fr-id">FR-5</td><td>Risk Scoring Engine</td><td>Unified 0–100 score combining IF score + Autoencoder error + peer-group deviation</td><td><span style="color:var(--w2)">W2</span></td><td>Custom scorer</td></tr>
+          <tr><td class="fr-id">FR-6</td><td>Automated Response</td><td>Trigger actions on score > 90 (disable AD user), > 75 (email alert); all actions logged with override capability</td><td><span style="color:var(--w3)">W3</span></td><td>Spring Events, mock LDAP</td></tr>
+          <tr><td class="fr-id">FR-7</td><td>Visual Analytics Dashboard</td><td>React frontend with real-time WebSocket alerts, D3.js network topology, timeline "Story Mode," SHAP explainability</td><td><span style="color:var(--w3)">W3</span></td><td>React, D3.js, Chart.js</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WEEK 1 PANEL -->
+    <div class="week-panel" id="panel-w1">
+      <div class="week-header">
+        <div class="week-num w1">01</div>
+        <div class="week-title">
+          <h2>Architecture, Project Scaffold & Data Pipeline</h2>
+          <div class="goal">Goal: A working backend ingesting simulated log data into storage</div>
+        </div>
+      </div>
+      <div class="week-deliverable">
+        <span>✅</span>
+        <span><strong>Deliverable:</strong> Run <code>docker-compose up</code> and see simulated logs flowing into MongoDB in real time.</span>
+      </div>
+
+      <div class="cards-grid" id="tasks-w1">
+        <!-- tasks injected by JS -->
+      </div>
+
+      <div class="code-section">
+        <h3>📁 Maven Multi-Module Structure</h3>
+        <div class="code-block"><span class="comm"># Project structure</span>
+apt-platform/
+├── pom.xml                    <span class="comm"># Parent POM (Java 21, Spring Boot 3.x)</span>
+├── core/                      <span class="comm"># Shared models, constants, utilities</span>
+├── ingestion/                 <span class="comm"># Kafka producer/consumer, pcap parsing</span>
+├── detection/                 <span class="comm"># ML engine, UEBA, MITRE mapping</span>
+├── api/                       <span class="comm"># REST controllers, WebSocket, Spring Security</span>
+├── response/                  <span class="comm"># Automated response engine</span>
+└── frontend/                  <span class="comm"># React dashboard (served via Spring)</span></div>
+      </div>
+
+      <div class="code-section">
+        <h3>🐳 Docker Compose Stack</h3>
+        <div class="code-block"><span class="ann">services</span>:
+  <span class="ann">zookeeper</span>:
+    image: confluentinc/cp-zookeeper:7.5.0
+  <span class="ann">kafka</span>:
+    image: confluentinc/cp-kafka:7.5.0
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  <span class="ann">mongodb</span>:
+    image: mongo:7.0
+    volumes: [mongo_data:/data/db]
+  <span class="ann">postgres</span>:
+    image: postgres:16
+    environment: {POSTGRES_DB: aptdb, POSTGRES_USER: apt}
+  <span class="ann">redis</span>:
+    image: redis:7.2-alpine
+  <span class="ann">app</span>:
+    build: .
+    depends_on: [kafka, mongodb, postgres, redis]</div>
+      </div>
+
+      <div class="code-section">
+        <h3>☕ Kafka Log Producer (Java 21)</h3>
+        <div class="code-block"><span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="cls">NetworkLogProducer</span> {
+    <span class="ann">@Autowired</span> <span class="kw">private</span> <span class="cls">KafkaTemplate</span>&lt;<span class="cls">String</span>, <span class="cls">NetworkEvent</span>&gt; kafkaTemplate;
+
+    <span class="kw">public void</span> simulate() {
+        <span class="comm">// Simulate APT pattern: lateral movement at 3AM</span>
+        <span class="kw">var</span> event = <span class="cls">NetworkEvent</span>.builder()
+            .timestamp(<span class="cls">Instant</span>.now())
+            .srcIp(<span class="str">"192.168.1.45"</span>)
+            .dstIp(<span class="str">"10.0.0.5"</span>)
+            .port(<span class="num">445</span>)       <span class="comm">// SMB - lateral movement indicator</span>
+            .bytes(<span class="num">2_450_000</span>)
+            .protocol(<span class="str">"TCP"</span>)
+            .userId(<span class="str">"svc_backup"</span>)
+            .action(<span class="str">"CONNECT"</span>)
+            .build();
+
+        kafkaTemplate.send(<span class="str">"network_traffic"</span>, event.getUserId(), event);
+    }
+}</div>
+      </div>
+
+      <h3 style="font-size:0.85rem;margin-bottom:10px;color:var(--accent)">🗄️ PostgreSQL Schema Design</h3>
+      <div class="schema-grid">
+        <div class="schema-table">
+          <div class="schema-title">entity_profiles</div>
+          <div class="schema-row"><span class="schema-col">id</span><span class="schema-type">UUID</span><span class="schema-pk">PK</span></div>
+          <div class="schema-row"><span class="schema-col">entity_id</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">entity_type</span><span class="schema-type">ENUM</span></div>
+          <div class="schema-row"><span class="schema-col">baseline_data</span><span class="schema-type">JSONB</span></div>
+          <div class="schema-row"><span class="schema-col">last_updated</span><span class="schema-type">TIMESTAMP</span></div>
+        </div>
+        <div class="schema-table">
+          <div class="schema-title">alerts</div>
+          <div class="schema-row"><span class="schema-col">id</span><span class="schema-type">UUID</span><span class="schema-pk">PK</span></div>
+          <div class="schema-row"><span class="schema-col">entity_id</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">risk_score</span><span class="schema-type">INTEGER</span></div>
+          <div class="schema-row"><span class="schema-col">mitre_technique</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">shap_drivers</span><span class="schema-type">JSONB</span></div>
+          <div class="schema-row"><span class="schema-col">status</span><span class="schema-type">ENUM</span></div>
+          <div class="schema-row"><span class="schema-col">created_at</span><span class="schema-type">TIMESTAMP</span></div>
+        </div>
+        <div class="schema-table">
+          <div class="schema-title">behavioral_baselines</div>
+          <div class="schema-row"><span class="schema-col">id</span><span class="schema-type">UUID</span><span class="schema-pk">PK</span></div>
+          <div class="schema-row"><span class="schema-col">entity_id</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">feature_name</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">mu (mean)</span><span class="schema-type">DOUBLE</span></div>
+          <div class="schema-row"><span class="schema-col">sigma_sq</span><span class="schema-type">DOUBLE</span></div>
+          <div class="schema-row"><span class="schema-col">sample_count</span><span class="schema-type">INTEGER</span></div>
+        </div>
+        <div class="schema-table">
+          <div class="schema-title">users</div>
+          <div class="schema-row"><span class="schema-col">id</span><span class="schema-type">UUID</span><span class="schema-pk">PK</span></div>
+          <div class="schema-row"><span class="schema-col">username</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">role</span><span class="schema-type">ENUM</span></div>
+          <div class="schema-row"><span class="schema-col">totp_secret</span><span class="schema-type">VARCHAR</span></div>
+          <div class="schema-row"><span class="schema-col">password_hash</span><span class="schema-type">VARCHAR</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEK 2 PANEL -->
+    <div class="week-panel" id="panel-w2">
+      <div class="week-header">
+        <div class="week-num w2">02</div>
+        <div class="week-title">
+          <h2>ML Detection Engine & Behavioral Profiling</h2>
+          <div class="goal">Goal: Working anomaly detection pipeline producing risk-scored, MITRE-mapped alerts</div>
+        </div>
+      </div>
+      <div class="week-deliverable">
+        <span>✅</span>
+        <span><strong>Deliverable:</strong> Feed 1000 simulated events (normal + APT injected) → see risk-scored, MITRE-mapped alerts in PostgreSQL.</span>
+      </div>
+
+      <div class="cards-grid" id="tasks-w2"></div>
+
+      <div class="code-section">
+        <h3>📐 UEBA Gaussian Anomaly Scoring</h3>
+        <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">UEBAProfiler</span> {
+
+    <span class="comm">// μ = (1/N) Σ xᵢ   |   σ² = (1/N) Σ (xᵢ - μ)²</span>
+    <span class="kw">public double</span> computeAnomalyScore(<span class="cls">String</span> entityId, <span class="cls">String</span> feature, <span class="kw">double</span> value) {
+        <span class="cls">Baseline</span> b = baselineRepo.findByEntityAndFeature(entityId, feature);
+
+        <span class="kw">double</span> mu = b.getMu();
+        <span class="kw">double</span> sigma = <span class="cls">Math</span>.sqrt(b.getSigmaSq());
+
+        <span class="comm">// Three-sigma rule: flag if |x - μ| > 3σ</span>
+        <span class="kw">double</span> deviation = <span class="cls">Math</span>.abs(value - mu) / (sigma + <span class="num">1e-9</span>);
+        <span class="kw">if</span> (deviation > <span class="num">3.0</span>) {
+            <span class="comm">// Gaussian probability P(x) using normal distribution</span>
+            <span class="kw">double</span> px = gaussianPDF(value, mu, sigma);
+            <span class="kw">return</span> px &lt; EPSILON ? <span class="num">1.0</span> : deviation / <span class="num">10.0</span>;
+        }
+        <span class="kw">return</span> <span class="num">0.0</span>;
+    }
+
+    <span class="comm">// Update rolling baseline with Welford's online algorithm</span>
+    <span class="kw">public void</span> updateBaseline(<span class="cls">String</span> entityId, <span class="cls">String</span> feature, <span class="kw">double</span> newValue) {
+        <span class="cls">Baseline</span> b = baselineRepo.findOrCreate(entityId, feature);
+        <span class="kw">long</span> n = b.getSampleCount() + <span class="num">1</span>;
+        <span class="kw">double</span> delta = newValue - b.getMu();
+        <span class="kw">double</span> newMu = b.getMu() + delta / n;
+        <span class="kw">double</span> delta2 = newValue - newMu;
+        b.update(n, newMu, b.getSigmaSq() + (delta * delta2 - b.getSigmaSq()) / n);
+        baselineRepo.save(b);
+    }
+}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>🌲 Isolation Forest + Autoencoder (DL4J)</h3>
+        <div class="code-block"><span class="ann">@Service</span>
+<span class="kw">public class</span> <span class="cls">AnomalyDetectionEngine</span> {
+
+    <span class="kw">private</span> <span class="cls">MultiLayerNetwork</span> autoencoder; <span class="comm">// DL4J model</span>
+
+    <span class="kw">public</span> <span class="cls">DetectionResult</span> detect(<span class="cls">INDArray</span> features) {
+        <span class="comm">// 1. Isolation Forest: short path = anomaly</span>
+        <span class="kw">double</span> ifScore = isolationForest.scoreInstance(features);
+
+        <span class="comm">// 2. Autoencoder: high reconstruction error = anomaly</span>
+        <span class="cls">INDArray</span> reconstructed = autoencoder.output(features);
+        <span class="kw">double</span> reconError = features.squaredDistance(reconstructed);
+
+        <span class="comm">// 3. Peer-group deviation from UEBA baselines</span>
+        <span class="kw">double</span> peerDeviation = uebaProfiler.peerGroupDeviation(features);
+
+        <span class="comm">// Unified risk score 0-100</span>
+        <span class="kw">double</span> riskScore = (<span class="num">0.4</span> * normalize(ifScore)
+                          + <span class="num">0.4</span> * normalize(reconError)
+                          + <span class="num">0.2</span> * normalize(peerDeviation)) * <span class="num">100</span>;
+
+        <span class="kw">return new</span> <span class="cls">DetectionResult</span>(riskScore, ifScore, reconError);
+    }
+
+    <span class="kw">private</span> <span class="cls">MultiLayerNetwork</span> buildAutoencoder() {
+        <span class="kw">var</span> conf = <span class="kw">new</span> <span class="cls">NeuralNetConfiguration</span>.Builder()
+            .updater(<span class="kw">new</span> <span class="cls">Adam</span>(<span class="num">0.001</span>))
+            .list()
+            .layer(<span class="kw">new</span> <span class="cls">DenseLayer</span>.Builder().nIn(<span class="num">20</span>).nOut(<span class="num">12</span>).activation(<span class="cls">Activation</span>.RELU).build())
+            .layer(<span class="kw">new</span> <span class="cls">DenseLayer</span>.Builder().nIn(<span class="num">12</span>).nOut(<span class="num">6</span>).activation(<span class="cls">Activation</span>.RELU).build()) <span class="comm">// bottleneck</span>
+            .layer(<span class="kw">new</span> <span class="cls">DenseLayer</span>.Builder().nIn(<span class="num">6</span>).nOut(<span class="num">12</span>).activation(<span class="cls">Activation</span>.RELU).build())
+            .layer(<span class="kw">new</span> <span class="cls">OutputLayer</span>.Builder().nIn(<span class="num">12</span>).nOut(<span class="num">20</span>).lossFunction(<span class="cls">LossFunctions</span>.MSE).build())
+            .build();
+        <span class="kw">return new</span> <span class="cls">MultiLayerNetwork</span>(conf);
+    }
+}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>🗺️ MITRE ATT&CK Mapping Logic</h3>
+        <div class="code-block"><span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="cls">MitreMapper</span> {
+    <span class="comm">// Rules engine: feature pattern → ATT&CK technique</span>
+    <span class="kw">private static final</span> <span class="cls">Map</span>&lt;<span class="cls">String</span>, <span class="cls">String</span>&gt; RULES = <span class="cls">Map</span>.of(
+        <span class="str">"failed_login_spike"</span>,   <span class="str">"T1110 - Brute Force"</span>,
+        <span class="str">"lateral_smb_traffic"</span>,  <span class="str">"T1021 - Remote Services"</span>,
+        <span class="str">"unusual_login_hour"</span>,   <span class="str">"T1078 - Valid Accounts"</span>,
+        <span class="str">"large_data_upload"</span>,    <span class="str">"T1041 - Exfiltration over C2"</span>,
+        <span class="str">"dns_tunneling"</span>,        <span class="str">"T1071 - Application Layer Protocol"</span>,
+        <span class="str">"new_admin_account"</span>,    <span class="str">"T1136 - Create Account"</span>
+    );
+
+    <span class="kw">public</span> <span class="cls">MitreTechnique</span> map(<span class="cls">NetworkEvent</span> event, <span class="cls">DetectionResult</span> result) {
+        <span class="kw">return</span> RULES.entrySet().stream()
+            .filter(e -&gt; matchesPattern(event, result, e.getKey()))
+            .findFirst()
+            .map(e -&gt; <span class="kw">new</span> <span class="cls">MitreTechnique</span>(e.getValue()))
+            .orElse(<span class="cls">MitreTechnique</span>.UNKNOWN);
+    }
+}</div>
+      </div>
+    </div>
+
+    <!-- WEEK 3 PANEL -->
+    <div class="week-panel" id="panel-w3">
+      <div class="week-header">
+        <div class="week-num w3">03</div>
+        <div class="week-title">
+          <h2>REST API, Real-Time Dashboard & Response Engine</h2>
+          <div class="goal">Goal: Live, interactive SOC dashboard showing alerts in real time</div>
+        </div>
+      </div>
+      <div class="week-deliverable">
+        <span>✅</span>
+        <span><strong>Deliverable:</strong> Open dashboard in browser → live alert feed → click alert → MITRE mapping + SHAP drivers + timeline.</span>
+      </div>
+
+      <div class="cards-grid" id="tasks-w3"></div>
+
+      <div class="code-section">
+        <h3>🔌 REST API Endpoints</h3>
+        <div class="code-block"><span class="ann">@RestController</span>
+<span class="ann">@RequestMapping</span>(<span class="str">"/api"</span>)
+<span class="kw">public class</span> <span class="cls">AlertController</span> {
+
+    <span class="ann">@GetMapping</span>(<span class="str">"/alerts"</span>)                 <span class="comm">// Paginated, filterable alerts</span>
+    <span class="ann">@GetMapping</span>(<span class="str">"/entities/{id}/profile"</span>)  <span class="comm">// UEBA profile for user/device</span>
+    <span class="ann">@GetMapping</span>(<span class="str">"/mitre/mapping/{alertId}"</span>) <span class="comm">// ATT&CK technique details</span>
+    <span class="ann">@PostMapping</span>(<span class="str">"/response/trigger"</span>)       <span class="comm">// Manual response action</span>
+    <span class="ann">@GetMapping</span>(<span class="str">"/actuator/health"</span>)         <span class="comm">// Spring Actuator health check</span>
+
+    <span class="kw">public</span> <span class="cls">Page</span>&lt;<span class="cls">AlertDTO</span>&gt; getAlerts(
+            <span class="ann">@RequestParam</span>(<span class="str">"minScore"</span>) <span class="kw">int</span> minScore,
+            <span class="ann">@RequestParam</span>(<span class="str">"status"</span>) <span class="cls">AlertStatus</span> status,
+            <span class="cls">Pageable</span> pageable) {
+        <span class="kw">return</span> alertService.findAll(minScore, status, pageable);
+    }
+}
+
+<span class="ann">@Controller</span>
+<span class="kw">public class</span> <span class="cls">AlertWebSocketHandler</span> {
+    <span class="ann">@MessageMapping</span>(<span class="str">"/ws/alerts"</span>)
+    <span class="comm">// Pushes real-time alerts via STOMP over WebSocket</span>
+    <span class="kw">public void</span> broadcastAlert(<span class="cls">Alert</span> alert) {
+        messagingTemplate.convertAndSend(<span class="str">"/topic/alerts"</span>, alert);
+    }
+}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>⚡ Automated Response Engine</h3>
+        <div class="code-block"><span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="cls">ResponseEngine</span> {
+
+    <span class="ann">@EventListener</span>
+    <span class="kw">public void</span> onHighRiskAlert(<span class="cls">AlertGeneratedEvent</span> event) {
+        <span class="cls">Alert</span> alert = event.getAlert();
+
+        <span class="kw">if</span> (alert.getRiskScore() >= <span class="num">90</span>) {
+            <span class="comm">// Disable user in mock Active Directory</span>
+            mockAdService.disableUser(alert.getEntityId());
+            auditLog.record(<span class="str">"AUTO_DISABLE"</span>, alert, <span class="cls">OperatorOverride</span>.NONE);
+
+        } <span class="kw">else if</span> (alert.getRiskScore() >= <span class="num">75</span>) {
+            <span class="comm">// Send email alert (mock SMTP / log to console in dev)</span>
+            notificationService.sendAlert(alert);
+            auditLog.record(<span class="str">"EMAIL_SENT"</span>, alert, <span class="cls">OperatorOverride</span>.NONE);
+        }
+    }
+
+    <span class="comm">// Operator override: allow SOC analyst to cancel automated action</span>
+    <span class="kw">public void</span> override(<span class="cls">UUID</span> alertId, <span class="cls">String</span> operatorId, <span class="cls">String</span> reason) {
+        auditLog.record(<span class="str">"OPERATOR_OVERRIDE"</span>, alertId, operatorId, reason);
+    }
+}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>⚛️ React Dashboard — Key Components</h3>
+        <div class="code-block"><span class="comm">// Real-time alert feed via WebSocket</span>
+<span class="kw">const</span> <span class="cls">AlertFeed</span> = () =&gt; {
+    <span class="kw">const</span> [alerts, setAlerts] = useState([]);
+
+    useEffect(() =&gt; {
+        <span class="kw">const</span> client = <span class="kw">new</span> <span class="cls">Client</span>({ brokerURL: <span class="str">'ws://localhost:8080/ws'</span> });
+        client.onConnect = () =&gt; {
+            client.subscribe(<span class="str">'/topic/alerts'</span>, msg =&gt; {
+                <span class="kw">const</span> alert = <span class="cls">JSON</span>.parse(msg.body);
+                setAlerts(prev =&gt; [alert, ...prev].slice(<span class="num">0</span>, <span class="num">100</span>));
+            });
+        };
+        client.activate();
+        <span class="kw">return</span> () =&gt; client.deactivate();
+    }, []);
+
+    <span class="kw">return</span> (
+        &lt;<span class="cls">Table</span>&gt;
+            {alerts.map(a =&gt; (
+                &lt;<span class="cls">Row</span> key={a.id} riskColor={riskColor(a.riskScore)}&gt;
+                    &lt;<span class="cls">TD</span>&gt;{a.entity}&lt;/<span class="cls">TD</span>&gt;
+                    &lt;<span class="cls">TD</span>&gt;&lt;<span class="cls">RiskBadge</span> score={a.riskScore}/&gt;&lt;/<span class="cls">TD</span>&gt;
+                    &lt;<span class="cls">TD</span>&gt;{a.mitreTechnique}&lt;/<span class="cls">TD</span>&gt;
+                    &lt;<span class="cls">TD</span>&gt;&lt;<span class="cls">ShapPanel</span> drivers={a.shapDrivers}/&gt;&lt;/<span class="cls">TD</span>&gt;
+                &lt;/<span class="cls">Row</span>&gt;
+            ))}
+        &lt;/<span class="cls">Table</span>&gt;
+    );
+};</div>
+      </div>
+    </div>
+
+    <!-- WEEK 4 PANEL -->
+    <div class="week-panel" id="panel-w4">
+      <div class="week-header">
+        <div class="week-num w4">04</div>
+        <div class="week-title">
+          <h2>Testing, Hardening, CI/CD & Deployment</h2>
+          <div class="goal">Goal: Production-hardened, tested, and deployed project with full documentation</div>
+        </div>
+      </div>
+      <div class="week-deliverable">
+        <span>✅</span>
+        <span><strong>Deliverable:</strong> GitHub Actions pipeline running tests → SAST → Docker build. Full README with architecture diagram.</span>
+      </div>
+
+      <div class="cards-grid" id="tasks-w4"></div>
+
+      <div class="code-section">
+        <h3>🧪 Integration Test with Testcontainers</h3>
+        <div class="code-block"><span class="ann">@SpringBootTest</span>
+<span class="ann">@Testcontainers</span>
+<span class="kw">class</span> <span class="cls">FullPipelineIntegrationTest</span> {
+
+    <span class="ann">@Container</span>
+    <span class="kw">static</span> <span class="cls">KafkaContainer</span> kafka = <span class="kw">new</span> <span class="cls">KafkaContainer</span>(<span class="cls">DockerImageName</span>.parse(<span class="str">"confluentinc/cp-kafka:7.5.0"</span>));
+
+    <span class="ann">@Container</span>
+    <span class="kw">static</span> <span class="cls">PostgreSQLContainer</span>&lt;?&gt; postgres = <span class="kw">new</span> <span class="cls">PostgreSQLContainer</span>&lt;&gt;(<span class="str">"postgres:16"</span>);
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> aptPatternShouldGenerateHighRiskAlert() <span class="kw">throws</span> <span class="cls">Exception</span> {
+        <span class="comm">// Inject simulated APT event (3AM login from unusual IP)</span>
+        producer.send(buildAptEvent(<span class="str">"svc_backup"</span>, <span class="str">"3:14 AM"</span>, <span class="str">"185.22.99.1"</span>));
+
+        <span class="comm">// Wait for pipeline to process</span>
+        await().atMost(<span class="num">10</span>, SECONDS).until(() -&gt;
+            alertRepo.findByEntityId(<span class="str">"svc_backup"</span>).stream()
+                .anyMatch(a -&gt; a.getRiskScore() &gt; <span class="num">70</span>)
+        );
+
+        <span class="cls">Alert</span> alert = alertRepo.findLatestByEntity(<span class="str">"svc_backup"</span>);
+        assertThat(alert.getRiskScore()).isGreaterThan(<span class="num">70</span>);
+        assertThat(alert.getMitreTechnique()).contains(<span class="str">"T1078"</span>);
+    }
+}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>⚙️ GitHub Actions CI/CD Pipeline</h3>
+        <div class="code-block"><span class="ann">name</span>: APT Platform CI/CD
+<span class="ann">on</span>: [push to main]
+
+<span class="ann">jobs</span>:
+  <span class="ann">build-and-deploy</span>:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: <span class="str">'21'</span>, distribution: <span class="str">'temurin'</span> }
+
+      - name: Run Tests (JUnit 5 + Testcontainers)
+        run: mvn test -Dspring.profiles.active=test
+
+      - name: SAST Scan (SpotBugs)
+        run: mvn spotbugs:check  <span class="comm"># Fail on HIGH severity</span>
+
+      - name: Build Docker Image
+        run: docker build -t apt-platform:${{ github.sha }} .
+
+      - name: Push to Docker Hub
+        run: docker push apt-platform:${{ github.sha }}</div>
+      </div>
+
+      <div class="code-section">
+        <h3>🔐 AES-256 Encryption (Jasypt)</h3>
+        <div class="code-block"><span class="comm"># application.yml — no hardcoded credentials</span>
+spring:
+  datasource:
+    password: ENC(aX7kP2mNqR8vL5sY...)  <span class="comm"># Jasypt-encrypted</span>
+  data:
+    mongodb:
+      password: ENC(bZ9wQ3nMs4uK6tX...)
+
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD}  <span class="comm"># Env var only</span>
+    algorithm: PBEWITHHMACSHA512ANDAES_256</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const panels = ['overview', 'fr', 'w1', 'w2', 'w3', 'w4'];
+
+// Task data
+const tasks = {
+  w1: [
+    { id: 'T1.1', name: 'Spring Boot Multi-Module Setup', desc: 'Create Maven parent POM with modules: core, ingestion, detection, api, response, frontend. Java 21 + Spring Boot 3.x baseline.', tags: ['java', 'devops'] },
+    { id: 'T1.2', name: 'Docker Compose Full Stack', desc: 'Configure Kafka+Zookeeper, MongoDB, PostgreSQL, Redis containers. Environment-variable config only — no hardcoded secrets.', tags: ['devops', 'db'] },
+    { id: 'T1.3', name: 'Kafka Log Producer', desc: 'Simulate network events: timestamp, src_ip, dst_ip, port, bytes, protocol, user_id, action. Inject APT patterns (3AM logins, lateral movement).', tags: ['kafka', 'java'] },
+    { id: 'T1.4', name: 'Kafka Consumer + MongoDB Persistence', desc: 'Consume from network_traffic topic, normalize event format, persist raw logs to MongoDB with indexed fields.', tags: ['kafka', 'db'] },
+    { id: 'T1.5', name: 'PostgreSQL Schema Design', desc: 'Design and migrate tables: entity_profiles, behavioral_baselines, alerts, mitre_mappings, users, response_audit. Use Flyway migrations.', tags: ['db'] },
+    { id: 'T1.6', name: 'Spring Security JWT RBAC', desc: 'Implement JWT token auth with roles: ADMIN, SOC_ANALYST, VIEWER. Role-based endpoint access control via Spring Security filters.', tags: ['security', 'java'] },
+    { id: 'T1.7', name: 'Ingestion Unit Tests', desc: 'JUnit 5 tests for all Kafka producer/consumer logic, MongoDB persistence, event normalization. Target: 80%+ coverage on ingestion module.', tags: ['java'] },
+  ],
+  w2: [
+    { id: 'T2.1', name: 'UEBA Gaussian Profiling', desc: 'Compute μ and σ² per feature per entity (failed logins, data volume, login hours). Apply Welford\'s online algorithm for rolling baseline updates.', tags: ['ml', 'java'] },
+    { id: 'T2.2', name: 'Three-Sigma Anomaly Rule', desc: 'Flag events where |x - μ| > 3σ. Use multivariate normal distribution for correlated features. Store scoring history per entity.', tags: ['ml'] },
+    { id: 'T2.3', name: 'Isolation Forest (DL4J)', desc: 'Train Isolation Forest on normal baseline data. Score new events by path length in isolation trees — shorter path = higher anomaly score.', tags: ['ml', 'java'] },
+    { id: 'T2.4', name: 'Autoencoder (DL4J)', desc: 'Build encoder-bottleneck-decoder network. Train on normal patterns only. Flag events with reconstruction error > configurable threshold.', tags: ['ml', 'java'] },
+    { id: 'T2.5', name: 'Unified Risk Scoring Engine', desc: 'Combine IF score (40%) + Autoencoder error (40%) + peer-group deviation (20%) into a single 0–100 risk score per alert.', tags: ['ml', 'java'] },
+    { id: 'T2.6', name: 'MITRE ATT&CK Mapping', desc: 'Load ATT&CK STIX JSON. Build rules engine mapping feature patterns to technique IDs: T1078 (valid accounts), T1071 (C2), T1110 (brute force) etc.', tags: ['java'] },
+    { id: 'T2.7', name: 'Alert Persistence + Simulation', desc: 'Store scored alerts in PostgreSQL with SHAP drivers, MITRE technique, entity context. Generate 1000 test events (normal + APT) and validate detection.', tags: ['db', 'java'] },
+  ],
+  w3: [
+    { id: 'T3.1', name: 'Full Spring Boot REST API', desc: 'GET /api/alerts (paginated/filtered), GET /api/entities/{id}/profile, GET /api/mitre/mapping/{id}, POST /api/response/trigger, GET /actuator/health.', tags: ['java'] },
+    { id: 'T3.2', name: 'WebSocket Real-Time Alerts', desc: 'Spring WebSocket + STOMP endpoint /ws/alerts. Push detected alerts to all subscribed dashboard clients with <1s latency.', tags: ['java', 'frontend'] },
+    { id: 'T3.3', name: 'React SOC Dashboard', desc: 'KPI cards (total alerts, high-risk count, MTTR, FP rate). Real-time alert table via WebSocket. Risk score histogram with Chart.js.', tags: ['frontend'] },
+    { id: 'T3.4', name: 'D3.js Network Topology', desc: 'Force-directed graph of entity connections. Highlight anomalous nodes in red. Click node → see full behavioral profile and alert history.', tags: ['frontend'] },
+    { id: 'T3.5', name: 'Timeline "Story Mode"', desc: 'Chronological attack reconstruction per entity. Connect events across reconnaissance → lateral movement → exfiltration stages.', tags: ['frontend'] },
+    { id: 'T3.6', name: 'Automated Response Engine', desc: 'Score > 90: disable user in mock AD. Score > 75: send email alert. All actions logged in audit table with operator override capability.', tags: ['java', 'security'] },
+    { id: 'T3.7', name: 'TOTP MFA (Admin Login)', desc: 'Implement TOTP via java-otp library (Google Authenticator compatible). Enforce MFA for ADMIN role. QR code provisioning endpoint.', tags: ['security', 'java'] },
+  ],
+  w4: [
+    { id: 'T4.1', name: 'Unit Tests (JUnit 5 + Mockito)', desc: 'Comprehensive unit tests for all detection engine methods. Mock external dependencies. Target 85%+ overall coverage.', tags: ['java'] },
+    { id: 'T4.2', name: 'Integration Tests (Testcontainers)', desc: 'Full pipeline tests: Kafka ingestion → ML detection → alert generation. Real containers, no mocks for infra. Validate APT patterns trigger correct MITRE mappings.', tags: ['java', 'devops'] },
+    { id: 'T4.3', name: 'Performance Test', desc: 'Simulate 10,000 events/minute. Measure end-to-end latency from Kafka ingest → WebSocket alert. Verify dashboard load < 3 seconds.', tags: ['java'] },
+    { id: 'T4.4', name: 'AES-256 Encryption (Jasypt)', desc: 'Encrypt all config secrets with AES-256 via Jasypt. TLS 1.3 for all API endpoints (self-signed cert for dev, ACME for prod). No hardcoded credentials in source.', tags: ['security'] },
+    { id: 'T4.5', name: 'SAST Scan (SpotBugs)', desc: 'Run SpotBugs + FindSecBugs plugin. Fix all HIGH severity findings. Add input validation with @Valid. Use parameterized queries to prevent SQL injection.', tags: ['security', 'devops'] },
+    { id: 'T4.6', name: 'GitHub Actions CI/CD', desc: 'On push to main: run tests → SAST scan → build Docker image → push to Docker Hub. Pre-commit hooks to prevent credential leakage.', tags: ['devops'] },
+    { id: 'T4.7', name: 'Docker Production Stack', desc: 'Production docker-compose.yml with all services. Environment-variable config. Health checks and restart policies. README with setup guide.', tags: ['devops'] },
+    { id: 'T4.8', name: 'Full Documentation', desc: 'README.md: architecture diagram, setup guide, feature list. ARCHITECTURE.md: design decisions. SECURITY.md: threat model. API docs via SpringDoc OpenAPI.', tags: ['devops'] },
+  ]
+};
+
+const tagColors = {java:'java',kafka:'kafka',ml:'ml',db:'db',security:'security',frontend:'frontend',devops:'devops'};
+
+// Track completion state
+const doneState = {};
+
+function renderTasks(weekKey) {
+  const container = document.getElementById(`tasks-${weekKey}`);
+  if (!container || container.children.length > 0) return;
+  tasks[weekKey].forEach(t => {
+    const id = `${weekKey}-${t.id}`;
+    const card = document.createElement('div');
+    card.className = `task-card${doneState[id] ? ' done' : ''}`;
+    card.id = `card-${id}`;
+    card.onclick = () => toggleTask(id);
+    card.innerHTML = `
+      <div class="task-top">
+        <div class="task-check">${doneState[id] ? '✓' : ''}</div>
+        <span class="task-id">${t.id}</span>
+        <span class="task-name">${t.name}</span>
+      </div>
+      <div class="task-desc">${t.desc}</div>
+      <div class="task-tags">${t.tags.map(tg => `<span class="tag ${tg}">${tg.toUpperCase()}</span>`).join('')}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleTask(id) {
+  doneState[id] = !doneState[id];
+  const card = document.getElementById(`card-${id}`);
+  const check = card.querySelector('.task-check');
+  if (doneState[id]) {
+    card.classList.add('done');
+    check.textContent = '✓';
+  } else {
+    card.classList.remove('done');
+    check.textContent = '';
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const weeks = ['w1','w2','w3','w4'];
+  let totalDone = 0, totalAll = 0;
+  weeks.forEach((w, i) => {
+    const all = tasks[w].length;
+    const done = tasks[w].filter(t => doneState[`${w}-${t.id}`]).length;
+    const pct = all > 0 ? Math.round(done/all*100) : 0;
+    document.getElementById(`prog${i+1}`).style.width = pct + '%';
+    const wbar = document.getElementById(`wbar${i+1}`);
+    if (wbar) wbar.style.opacity = done === all && all > 0 ? 1 : 0.4;
+    totalDone += done; totalAll += all;
+  });
+  const total = totalAll > 0 ? Math.round(totalDone/totalAll*100) : 0;
+  document.getElementById('total-pct').textContent = total + '%';
+  document.getElementById('total-bar').style.width = total + '%';
+}
+
+function showPanel(id) {
+  panels.forEach(p => {
+    const panel = document.getElementById(`panel-${p}`);
+    const btn = document.getElementById(`nav-${p}`);
+    if (panel) panel.classList.toggle('active', p === id);
+    if (btn) btn.classList.toggle('active', p === id);
+  });
+  // Also handle overview/fr buttons (no id prefix)
+  document.querySelectorAll('.week-btn').forEach(b => {
+    const match = b.getAttribute('onclick')?.match(/'([^']+)'/);
+    if (match) b.classList.toggle('active', match[1] === id);
+  });
+  // Render tasks on first visit
+  if (['w1','w2','w3','w4'].includes(id)) renderTasks(id);
+}
+
+// Init
+renderTasks('w1');
+renderTasks('w2');
+renderTasks('w3');
+renderTasks('w4');
+updateProgress();
+</script>
+</body>
+</html>
